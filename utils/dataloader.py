@@ -1,5 +1,6 @@
 import torch
 import os
+import shutil
 import requests
 import zipfile
 
@@ -25,10 +26,27 @@ class FaceDataset(Dataset):
     def __augmentation_dataset(self):
         pass
     
-    def __extract_dataset(self):
-        return ''
+    def __extract_dataset(self, pathfile):
+        if not os.path.exists('data'):
+            os.mkdir('data')
+
+        pathfiles = []
+        with zipfile.ZipFile(pathfile, 'r') as filezip:
+            filezip.extractall('data')
+
+        list_path = os.listdir('data')
+
+        if not os.path.exists('data/images'):
+            os.mkdir('data/images')
+
+        for path in list_path:
+            if 'data/'+path != pathfile:
+                shutil.move(f'data/{path}', 'data/images')
+                pathfiles.append(f'data/images/{path}')
+
+        return pathfiles
     
-    def __download_dataset(self, url, name, is_google_drive=False):
+    def __download_dataset(self, url, name, is_google_drive=False, is_text=False):
         if not os.path.exists('data'):
             os.mkdir('data')
 
@@ -48,9 +66,12 @@ class FaceDataset(Dataset):
             res = requests.get(url, stream=True)
             assert(res.status_code == 200), f'ERROR: impossible to download the image (code={res.status_code})'
 
+        open_mode = 'wb'
+        if is_text:
+            open_mode = 'w'
 
-        with open(f'data/{name}', 'wb') as file:
-            for data in res.iter_content(chunk_size=128):
+        with open(f'data/{name}', open_mode) as file:
+            for data in tqdm(res.iter_content(chunk_size=128)):
                 file.write(data)
         return f'data/{name}'
 
