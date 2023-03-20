@@ -21,7 +21,7 @@ class TestClassFaceDataset(unittest.TestCase):
     def test_extration_file(self):
         faceDataset = FaceDataset()
         path_file = faceDataset._FaceDataset__download_dataset(URL, 'test.zip', True)
-        list_path_file = faceDataset._FaceDataset__extract_dataset(path_file)
+        list_path_file = faceDataset._FaceDataset__extract_dataset(path_file, False)
 
         self.assertTrue(os.path.exists('data')) 
         self.assertTrue(len(list_path_file)> 0)
@@ -32,6 +32,23 @@ class TestClassFaceDataset(unittest.TestCase):
             os.remove(path)
         os.rmdir('data/images')
         os.rmdir('data')
+    
+    def test_age_range(self):
+        faceDataset = FaceDataset()
+
+        req_age = faceDataset.get_age_range(1)
+        self.assertEqual(req_age, 0)
+
+        req_age = faceDataset.get_age_range(24)
+        self.assertEqual(req_age, 4)
+
+        req_age = faceDataset.get_age_range(100)
+        self.assertEqual(req_age, 20)
+
+        req_age = faceDataset.get_age_range(132)
+        self.assertEqual(req_age, 20)
+
+        print(faceDataset.get_all_age_range())
 
         
 
