@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 URL_UTK_FACE_PART_1 = {'id': '0BxYys69jI14kRjNmM0gyVWM2bHM'}
 URL_UTK_FACE_PART_2 = {'id': '0BxYys69jI14kYVM3aVhKS1VhRUk'}
-URL_FACIAL_AGE = {'id': '18JDhu3egCTBfmHdgoPkLos1dkVLxDaoB'}
+URL_FACIAL_AGE = {'id': '1s_tqkvu4_BkZu5NV5KGqEirPg0qjDLor'}
 
 RANGE_YEARS=5
 
