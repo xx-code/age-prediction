@@ -30,8 +30,21 @@ def dataAugmentation(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
 class FaceDataset(Dataset):
     def get_age_range(self, age):
         if age >= 100:
-            return 100/RANGE_YEARS
+            return int(100/RANGE_YEARS)
         return int(math.floor(age/RANGE_YEARS) ) 
+    
+    def get_age_range_extended(self, age):
+        if age <= 9:
+            return 0
+        elif age <= 19:
+            return 1
+        elif age <= 44:
+            return 2
+        else:
+            return 3
+        
+    def get_all_age_range_extended(self,):
+        return {0: '0-9', 1: '10-19', 2: '20-44', 3: '45+'}
 
     def get_all_age_range(self):
         age_range = []
@@ -179,7 +192,7 @@ class FaceDataset(Dataset):
 
         # create anotation csv for image and label
         with open('data/anotations.csv', 'w', newline='') as csvfile:
-            fieldnames = ['path_img', 'age', 'age_range']
+            fieldnames = ['path_img', 'age', 'age_range', 'age_range_extended']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
 
@@ -187,12 +200,13 @@ class FaceDataset(Dataset):
                 s_idx = path.find('_')
                 age = int(path[:s_idx])
                 age_range = self.get_age_range(age)
-                writer.writerow({'path_img': f'data/images/{path}', 'age': age, 'age_range': age_range})
+                age_range_extented = self.get_age_range_extended(age)
+                writer.writerow({'path_img': f'data/images/{path}', 'age': age, 'age_range': age_range, 'age_range_extended':age_range_extented})
 
             print('- Dataset is ready!')
                 
 
-    def __init__(self, transform=None, is_classification=False):
+    def __init__(self, transform=None, is_classification=False, is_group_network=False, group_rng=None):
         if not os.path.exists('data'):
             self.__init_dataset()
         else:
@@ -207,6 +221,8 @@ class FaceDataset(Dataset):
         self.img_dir = 'data/images'
         self.img_labels = pandas.read_csv('data/anotations.csv')
         self.is_classification = is_classification
+        self.is_group_network=is_group_network
+        self.group_rng = group_rng
     
     def __len__(self):
         return len(self.img_labels)
@@ -215,12 +231,21 @@ class FaceDataset(Dataset):
         idx_label = 1
         if self.is_classification:
             idx_label = 2
+        
+        if self.is_group_network:
+            idx_label = 3
 
         img = torchvision.io.read_image(self.img_labels.iloc[index, 0])
 
         if self.transform:
             img = self.transform(img)
         
-        label = self.img_labels.iloc[index, idx_label]
+        if self.is_group_network and self.group_rng is not None:
+            if self.img_labels.iloc[index, idx_label] == self.group_rng:
+                label = 1
+            else:
+                label = 0
+        else:
+            label = self.img_labels.iloc[index, idx_label]
 
         return img, label
