@@ -12,6 +12,7 @@ import pandas
 
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from PIL import Image
 
 URL_UTK_FACE_PART_1 = {'id': '0BxYys69jI14kRjNmM0gyVWM2bHM'}
 URL_UTK_FACE_PART_2 = {'id': '0BxYys69jI14kYVM3aVhKS1VhRUk'}
@@ -19,12 +20,54 @@ URL_FACIAL_AGE = {'id': '1s_tqkvu4_BkZu5NV5KGqEirPg0qjDLor'}
 
 RANGE_YEARS=5
 
-def dataAugmentation(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+class DeNormalize(object):
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, x):
+        for i,(m, s) in enumerate(zip(self.mean, self.std)):
+            x[i,:, :] *= s
+            x[i, :, :] += m
+            
+        return x 
+
+class Permute(object):
+    def __init__(self, dims):
+        self.dims = dims
+
+    def __call__(self, x):
+        new_x = torch.permute_copy(x, self.dims)
+        return new_x
+
+class Clip(object):
+    def __init__(self, min, max):
+        self.min = float(min)
+        self.max = float(max)
+
+    def __call__(self, x):
+        new_x = torch.clamp(x, self.min, self.max)
+        return new_x
+
+def preprocess(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
     return torchvision.transforms.Compose(
         [
+            torchvision.transforms.Resize((196, 196)),
             torchvision.transforms.RandomRotation((-30,30)),
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize(mean=mean, std=std),
         ]
     )
+
+def postprocess(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    return torchvision.transforms.Compose(
+        [
+            DeNormalize(mean=mean, std=std),
+            Permute((1, 2, 0)),
+            Clip(0, 1)
+        ]
+    )
+
 
 
 class FaceDataset(Dataset):
@@ -235,7 +278,7 @@ class FaceDataset(Dataset):
         if self.is_group_network:
             idx_label = 3
 
-        img = torchvision.io.read_image(self.img_labels.iloc[index, 0])
+        img = Image.open(self.img_labels.iloc[index, 0])
 
         if self.transform:
             img = self.transform(img)
