@@ -16,9 +16,9 @@ class TestClassFaceDataset(unittest.TestCase):
         pretrain = nn.Sequential(OrderedDict(
                 [
                     ('conv-00', nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)),
-                    ('relu-00', nn.ReLU()),
+                    ('relu-00', nn.Relu()),
                     ('conv-01', nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)),
-                    ('relu-01', nn.ReLU())
+                    ('relu-01', nn.Relu())
                 ]
             )
         )

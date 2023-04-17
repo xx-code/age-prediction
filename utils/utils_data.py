@@ -1,13 +1,16 @@
 
 import numpy as np
 
-from torch.utils.data.sampler import SubsetRandomSampler
+from torch.utils.data.sampler import SubsetRandomSampler, WeightedRandomSampler
 from torch.utils.data import Dataset
+from numpy.random import RandomState
 
-def train_validation_test_split(dataset:Dataset, validation_size=0, test_size=0) :
+def train_validation_test_split(dataset:Dataset, validation_size=0, test_size=0):
+    rand = RandomState(seed=0)
+
     dsize = len(dataset)
     indices_dataset = np.arange(0, dsize, step=1)
-    np.random.shuffle(indices_dataset)
+    rand.shuffle(indices_dataset)
 
     split = int(np.floor(test_size*dsize))
 
@@ -17,7 +20,7 @@ def train_validation_test_split(dataset:Dataset, validation_size=0, test_size=0)
 
     split_val= int(np.floor(validation_size*len(indices_train)))
 
-    np.random.shuffle(indices_train)
+    rand.shuffle(indices_train)
 
     indices_train, indices_validation = indices_train[split_val:], indices_train[:split_val]
 
