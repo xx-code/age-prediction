@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.functional as F
+import torch.nn.functional as F
 
 from PIL import Image
 from torchvision import transforms
@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 
 class CustomVGGPytorch(nn.Module):
-    def __init__(self , num_classes):
+    def __init__(self):
         super(CustomVGGPytorch, self).__init__()
         self.conv1_a = nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=1, padding=1)
         self.bn1_a = nn.BatchNorm2d(16)
@@ -38,7 +38,7 @@ class CustomVGGPytorch(nn.Module):
         self.maxpool3 = nn.MaxPool2d(kernel_size=3, stride=2)
 
 
-        self.conv4_a = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=1)
+        self.conv4_a = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1, padding=1)
         self.bn4_a = nn.BatchNorm2d(128)
         self.conv4_b = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=1)
         self.bn4_b = nn.BatchNorm2d(128)
@@ -61,7 +61,7 @@ class CustomVGGPytorch(nn.Module):
         self.fc1 = nn.Linear(256 * 6 * 6, 4096)
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, 4096)
-        self.fc4 = nn.Linear(4096, num_classes)
+        self.fc4 = nn.Linear(4096, 1)
 
     def forward(self, x):
         x = nn.functional.interpolate(x, size=(196, 196), mode='bilinear', align_corners=True)
@@ -106,9 +106,9 @@ class CustomVGGPytorch(nn.Module):
         x = self.fc1(x)
         x = self.fc2(x)
         x = self.fc3(x)
+        x = self.fc4(x)
 
-        x = nn.functional.softmax(self.fc4(x), dim=1)
-        return x
+        return torch.sigmoid(x)
 class VGGPytorch:
     def __init__(self, version=''):
         pass
