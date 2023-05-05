@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import pandas as pd
 
+from utils.dataloader  import FaceDataset, preprocess, postprocess
 from tqdm import tqdm
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, precision_score, roc_auc_score, roc_curve, recall_score, mean_absolute_error, r2_score
 
@@ -40,7 +41,9 @@ def training(model, n_epoch, train_loader, optimizer, criterion, validation_load
 
             images = images.to(DEVICE)
             targets = targets.to(DEVICE)
-            targets = targets.float()
+
+            if not is_classification or is_binary:
+                targets = targets.float()
 
             optimizer.zero_grad()
 
@@ -59,7 +62,7 @@ def training(model, n_epoch, train_loader, optimizer, criterion, validation_load
         
         mean_train = np.mean(train_losses)
 
-        if not full_train or validation_loader is None:
+        if not full_train or validation_loader is not None:
             model.eval()
             y_pred = []
             y_true = []
@@ -152,7 +155,7 @@ def training(model, n_epoch, train_loader, optimizer, criterion, validation_load
 
 
 
-def testing(model, criterion, test_validation, is_binary=False, DEVICE='cpu'):
+def testing(model, criterion, test_validation, is_binary=False, is_classification=False, DEVICE='cpu'):
     model.eval()
     model.to(DEVICE)
 
@@ -177,7 +180,8 @@ def testing(model, criterion, test_validation, is_binary=False, DEVICE='cpu'):
 
         images = images.to(DEVICE)
         targets = targets.to(DEVICE)
-        targets = targets.float()
+        if not is_classification or is_binary:
+            targets = targets.float()
 
         with torch.no_grad():
             predicts = model(images)
@@ -194,6 +198,11 @@ def testing(model, criterion, test_validation, is_binary=False, DEVICE='cpu'):
             predicts_cpu[predicts_cpu < 0.5] = 0.0
             targets_cpu[targets_cpu >= 0.5] = 1.0
             targets_cpu[targets_cpu < 0.5] = 0.0
+        
+        if is_classification:
+            faceDataset = FaceDataset(preprocess(), is_classification=True)
+            label_names = faceDataset.get_all_age_range()
+            predicts_cpu = np.int32(predicts_cpu)
 
         y_pred = np.append(y_pred, predicts_cpu)
         y_true = np.append(y_true, targets_cpu)
@@ -203,15 +212,22 @@ def testing(model, criterion, test_validation, is_binary=False, DEVICE='cpu'):
 
         if predicts_cpu[rand_idx[0]] == targets_cpu[rand_idx[0]]:
             images_correct.append(images[rand_idx[0]].cpu())
-            label_correct.append(np.int64(predicts_cpu[rand_idx[0]]))
+            label_n = np.int64(predicts_cpu[rand_idx[0]])
+            if is_classification:
+                label_n = label_names[np.int64(predicts_cpu[rand_idx[0]])]
+            label_correct.append(label_n)
             num_save_correct += 1
         else:
             images_incorrect.append((images[rand_idx[0]].cpu()))
-            label_incorrect.append(f'pred:{np.int64(predicts_cpu[rand_idx[0]])} - true:{np.int64(targets_cpu[rand_idx[0]])}')
+            label_n = f'T:{np.int64(predicts_cpu[rand_idx[0]]) } - F:{np.int64(targets_cpu[rand_idx[0]])}'
+            if is_classification:
+                label_n = f'T:{label_names[np.int64(predicts_cpu[rand_idx[0]])]} - F:{label_names[np.int64(targets_cpu[rand_idx[0]])]}'
+            label_incorrect.append(label_n)
             if np.int64(predicts_cpu[rand_idx[0]]) - np.int64(targets_cpu[rand_idx[0]]) >= 5:
                 idx_worst_case.append(num_save_incorrect )
 
             num_save_incorrect += 1
+            
 
 
     print('[-] Test loss {:.6f}'.format(np.mean(val_losses)))

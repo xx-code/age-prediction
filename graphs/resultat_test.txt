@@ -1,0 +1,6 @@
+Test-resnet-regression-with-vgg-pretrain
+MAE:2.707616	R2:0.951679
+
+Test-resnet-regression-without-vgg-pretrain
+MAE:2.697099	R2:0.949933
+	

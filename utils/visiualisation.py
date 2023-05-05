@@ -33,6 +33,7 @@ def grid_image_data_set(images, labels, graph_title, do_save=False, file_name=''
     fig, ax = plt.subplots(rows, 3, tight_layout=True)
     index = 0
 
+
     for i in range(rows):
         for j in range(3):
             if idx_no_display and index == len(images) - 1:
